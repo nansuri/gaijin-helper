@@ -84,7 +84,9 @@ const translate = async (text: string) => {
   currentTranslation.value = '';
 
   try {
-    const res = await fetch('http://localhost:5050/translate', {
+const LIBRETRANSLATE_API_URL = import.meta.env.VITE_LIBRETRANSLATE_API_URL || 'http://localhost:5050';
+// ...
+    const res = await fetch(`${LIBRETRANSLATE_API_URL}/translate`, {
       method: 'POST',
       body: JSON.stringify({ q: text, source: fromLanguage.value, target: toLanguage.value, format: 'text' }),
       headers: { 'Content-Type': 'application/json' }
