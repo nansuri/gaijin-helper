@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: .
+    ports:
+      - "8090:80"
+    depends_on:
+      - libretranslate
+
+  libretranslate:
+    image: libretranslate/libretranslate:latest
+    ports:
+      - "5050:5000"
+    environment:
+      - LT_LOAD_ONLY=en,id,ja

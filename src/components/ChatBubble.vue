@@ -6,31 +6,70 @@ defineProps<{
 </script>
 
 <template>
-  <div class="chat-bubble" :class="type">
-    {{ text }}
+  <div class="chat-bubble-wrapper" :class="`type-${type}`">
+    <div class="speaker-icon">
+      <i class="fas" :class="type === 'transcription' ? 'fa-user' : 'fa-robot'"></i>
+    </div>
+    <div class="chat-bubble">
+      {{ text }}
+    </div>
   </div>
 </template>
 
 <style scoped>
+.chat-bubble-wrapper {
+  display: flex;
+  max-width: 75%;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.speaker-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+  box-shadow: 0 2px 4px var(--shadow-color);
+}
+
 .chat-bubble {
-  max-width: 70%;
-  padding: 10px 15px;
-  border-radius: 20px;
-  margin-bottom: 10px;
+  padding: 0.75rem 1.25rem;
+  border-radius: 1.25rem;
+  line-height: 1.5;
+  font-size: 1rem;
   word-wrap: break-word;
+  box-shadow: 0 2px 4px var(--shadow-color);
+  transition: all 0.3s ease;
 }
 
-.chat-bubble.transcription {
-  background-color: #0d6efd;
-  color: white;
+/* User's transcription bubble */
+.type-transcription {
   align-self: flex-end;
-  border-bottom-right-radius: 5px;
+  margin-left: auto;
+}
+.type-transcription .chat-bubble {
+  background-color: var(--bubble-user);
+  color: var(--bubble-user-text);
+  border-bottom-right-radius: 0.5rem;
+}
+.type-transcription .speaker-icon {
+  background-color: var(--accent-primary);
+  color: var(--bubble-user-text);
 }
 
-.chat-bubble.translation {
-  background-color: #f0f0f0;
-  color: #212529;
+
+/* Bot's translation bubble */
+.type-translation {
   align-self: flex-start;
-  border-bottom-left-radius: 5px;
+}
+.type-translation .chat-bubble {
+  background-color: var(--bubble-bot);
+  color: var(--bubble-bot-text);
+  border-bottom-left-radius: 0.5rem;
 }
 </style>
