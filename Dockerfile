@@ -4,7 +4,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-RUN npm run build
+ARG VITE_LIBRETRANSLATE_API_URL
+RUN VITE_LIBRETRANSLATE_API_URL=${VITE_LIBRETRANSLATE_API_URL} npm run build
 
 # Stage 2: Serve the built application with Nginx
 FROM nginx:alpine
