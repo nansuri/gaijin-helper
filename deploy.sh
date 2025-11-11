@@ -13,7 +13,7 @@
 echo "--- Starting Clean Deployment ---"
 
 echo "1. Stopping and removing existing Docker containers and associated resources..."
-docker-compose down --volumes --remove-orphans
+DOCKER_BUILDKIT=1 docker-compose down --volumes --remove-orphans
 
 if [ $? -ne 0 ]; then
     echo "Error: docker-compose down failed. Aborting deployment."
@@ -21,7 +21,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "2. Building and starting new Docker containers in detached mode..."
-docker-compose up -d --build
+DOCKER_BUILDKIT=1 docker-compose up -d --build
 
 if [ $? -ne 0 ]; then
     echo "Error: docker-compose up failed. Aborting deployment."
