@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Translator</title>
+    <!-- Materialize CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <ul id="slide-out" class="sidenav">
+        <li><a class="subheader">Conversation History</a></li>
+        <li><div class="divider"></div></li>
+        <div id="history-container"></div>
+        <li><div class="divider"></div></li>
+        <li><a class="waves-effect" id="clear-history-btn"><i class="material-icons">delete</i>Clear History</a></li>
+    </ul>
+    <a href="#" data-target="slide-out" class="sidenav-trigger btn-floating btn-large waves-effect waves-light" style="position: absolute; top: 20px; left: 20px;"><i class="material-icons">history</i></a>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-content">
+                <span class="card-title">Real-time Conversation Translator</span>
+                <p class="grey-text">Translate your conversations in real-time with this simple and easy-to-use tool.</p>
+                <div class="row" style="margin-top: 20px;">
+                    <div class="col s12 m5">
+                        <div class="input-field">
+                            <select id="from-language">
+                                <option value="en" selected>English</option>
+                                <option value="ja">Japanese</option>
+                                <option value="id">Indonesian</option>
+                            </select>
+                            <label>From</label>
+                        </div>
+                    </div>
+                    <div class="col s12 m2 center-align">
+                        <a class="btn-floating btn-large waves-effect waves-light" id="swap-btn"><i class="material-icons">swap_horiz</i></a>
+                    </div>
+                    <div class="col s12 m5">
+                        <div class="input-field">
+                            <select id="to-language">
+                                <option value="en">English</option>
+                                <option value="ja" selected>Japanese</option>
+                                <option value="id">Indonesian</option>
+                            </select>
+                            <label>To</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col s12">
+                        <div class="input-field">
+                            <i class="material-icons prefix">mic</i>
+                            <textarea id="transcription" class="materialize-textarea" placeholder="Transcription will appear here..."></textarea>
+                            <label for="transcription">Transcription</label>
+                            <a class="btn-floating btn-small waves-effect waves-light copy-btn" data-target="transcription"><i class="material-icons">content_copy</i></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col s12">
+                        <div class="input-field">
+                            <i class="material-icons prefix">translate</i>
+                            <textarea id="translation" class="materialize-textarea" placeholder="Translation will appear here..."></textarea>
+                            <label for="translation">Translation</label>
+                            <a class="btn-floating btn-small waves-effect waves-light copy-btn" data-target="translation"><i class="material-icons">content_copy</i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-action center-align">
+                <a class="btn-floating btn-large waves-effect waves-light red" id="record-btn"><i class="material-icons">mic</i></a>
+                <a class="btn-floating btn-large waves-effect waves-light" id="speak-btn"><i class="material-icons">volume_up</i></a>
+                <a class="btn-floating btn-large waves-effect waves-light" id="clear-btn"><i class="material-icons">clear</i></a>
+                <div class="switch" style="display: inline-block; margin-left: 20px;">
+                    <label>
+                        Auto Speak
+                        <input type="checkbox" id="auto-speak">
+                        <span class="lever"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Materialize JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
