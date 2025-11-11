@@ -7,9 +7,6 @@ defineProps<{
 
 <template>
   <div class="chat-bubble-wrapper" :class="`type-${type}`">
-    <div class="speaker-icon">
-      <i class="fas" :class="type === 'transcription' ? 'fa-user' : 'fa-robot'"></i>
-    </div>
     <div class="chat-bubble">
       {{ text }}
     </div>
@@ -19,22 +16,7 @@ defineProps<{
 <style scoped>
 .chat-bubble-wrapper {
   display: flex;
-  max-width: 75%;
-  align-items: flex-end;
-  gap: 0.75rem;
-}
-
-.speaker-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-shrink: 0;
-  background-color: var(--bg-secondary);
-  color: var(--text-secondary);
-  box-shadow: 0 2px 4px var(--shadow-color);
+  max-width: 80%;
 }
 
 .chat-bubble {
@@ -57,11 +39,6 @@ defineProps<{
   color: var(--bubble-user-text);
   border-bottom-right-radius: 0.5rem;
 }
-.type-transcription .speaker-icon {
-  background-color: var(--accent-primary);
-  color: var(--bubble-user-text);
-}
-
 
 /* Bot's translation bubble */
 .type-translation {

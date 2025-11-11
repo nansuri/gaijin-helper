@@ -16,7 +16,7 @@ const toLanguage = ref('ja');
 const messages = ref<Message[]>([]);
 const chatContainer = ref<HTMLElement | null>(null);
 const autoSpeak = ref(false);
-const theme = ref<'light' | 'dark'>('light');
+const theme = ref<'light' | 'dark'>('dark'); // Changed default to 'dark'
 let messageIdCounter = 0;
 let translationTimeout: number | undefined;
 
@@ -32,9 +32,12 @@ const {
 
 // --- Lifecycle & Watchers ---
 onMounted(() => {
-  // You could load a saved theme from localStorage here
-  // const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
-  // if (savedTheme) theme.value = savedTheme;
+  const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
+  if (savedTheme) {
+    theme.value = savedTheme;
+  } else {
+    document.documentElement.className = 'dark'; // Explicitly set dark if no saved theme
+  }
 });
 
 watch(transcription, (newTranscription) => {
@@ -58,8 +61,7 @@ watch(messages, () => {
 
 watch(theme, (newTheme) => {
   document.documentElement.className = newTheme;
-  // You could save the theme to localStorage here
-  // localStorage.setItem('theme', newTheme);
+  localStorage.setItem('theme', newTheme);
 });
 
 // --- Functions ---
@@ -129,6 +131,10 @@ const speak = (textToSpeak?: string) => {
   }
 };
 
+const clearText = () => {
+  messages.value = [];
+};
+
 const toggleTheme = () => {
   theme.value = theme.value === 'light' ? 'dark' : 'light';
 };
@@ -144,7 +150,7 @@ const toggleTheme = () => {
           <label for="auto-speak">Auto Speak</label>
         </div>
         <button @click="toggleTheme" class="theme-toggle" title="Toggle Theme">
-          <i class="fas" :class="theme === 'light' ? 'fa-moon' : 'fa-sun'"></i>
+          {{ theme === 'light' ? '🌙' : '☀️' }}
         </button>
       </div>
     </header>
@@ -161,7 +167,7 @@ const toggleTheme = () => {
           <option value="id">Indonesian</option>
         </select>
         <button @click="swapLanguages" class="control-button" title="Swap Languages">
-          <i class="fas fa-arrows-rotate"></i>
+          Swap
         </button>
         <select class="language-select" v-model="toLanguage">
           <option value="en">English</option>
@@ -171,13 +177,13 @@ const toggleTheme = () => {
       </div>
       <div class="main-controls">
         <button @click="speak()" class="control-button" title="Speak Translation">
-          <i class="fas fa-play"></i>
+          Speak
         </button>
         <button @click="toggleListening" class="mic-button" :class="{ 'recording': isListening }" title="Start/Stop Listening">
-          <i class="fas fa-microphone-lines"></i>
+          🎤
         </button>
         <button @click="clearText" class="control-button" title="Clear Messages">
-          <i class="fas fa-broom"></i>
+          Clear
         </button>
       </div>
     </footer>
@@ -229,12 +235,12 @@ const toggleTheme = () => {
   background: none;
   border: none;
   color: var(--text-secondary);
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: transform 0.2s;
 }
 .theme-toggle:hover {
-  color: var(--accent-primary);
+  transform: scale(1.1);
 }
 
 .chat-window {
@@ -278,28 +284,26 @@ const toggleTheme = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .control-button {
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
-  width: 55px;
-  height: 55px;
-  border-radius: 50%;
-  font-size: 1.2rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   transition: all 0.2s ease-in-out;
   box-shadow: 0 2px 5px var(--shadow-color);
 }
 .control-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px var(--shadow-color);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px var(--shadow-color);
   color: var(--accent-primary);
+  border-color: var(--accent-primary);
 }
 
 .mic-button {
@@ -309,17 +313,18 @@ const toggleTheme = () => {
   width: 70px;
   height: 70px;
   border-radius: 50%;
-  font-size: 1.75rem;
+  font-size: 2.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px -5px var(--accent-primary);
-  order: 0; /* Keep mic button in the middle if needed, but flexbox gap is better */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .mic-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px -5px var(--accent-primary);
 }
-
 .mic-button.recording {
   animation: pulse 1.5s infinite;
 }
