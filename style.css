@@ -1,127 +1,101 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
-
 :root {
-    --primary-color: #6200ee;
-    --primary-variant-color: #3700b3;
-    --secondary-color: #03dac6;
-    --background-color: #f5f5f5;
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --background-color: #f8f9fa;
     --surface-color: #ffffff;
-    --on-primary-color: #ffffff;
-    --on-surface-color: #000000;
+    --transcription-bubble-bg: #e9f5ff;
+    --translation-bubble-bg: #f0f0f0;
+    --text-color: #212529;
 }
 
 body {
-    font-family: 'Roboto', sans-serif;
     background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+#chat-container {
+    overflow-y: auto;
     display: flex;
-    min-height: 100vh;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
 }
 
-.container {
-    width: 90%;
-    max-width: 800px;
-}
-
-.card {
+.chat-bubble {
+    max-width: 70%;
+    padding: 10px 15px;
     border-radius: 20px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
-    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+    margin-bottom: 10px;
+    position: relative;
+    word-wrap: break-word;
 }
 
-.card:hover {
-    box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
-}
-
-.card-title {
-    font-weight: 500;
-    color: var(--primary-color);
-}
-
-.input-field .prefix {
-    color: var(--primary-color);
-}
-
-.input-field .select-wrapper input.select-dropdown {
-    color: var(--on-surface-color);
-}
-
-.materialize-textarea {
-    color: var(--on-surface-color);
-    border-bottom: 1px solid var(--primary-color);
-    box-shadow: 0 1px 0 0 var(--primary-color);
-}
-
-.materialize-textarea:focus {
-    border-bottom: 1px solid var(--primary-variant-color);
-    box-shadow: 0 1px 0 0 var(--primary-variant-color);
-}
-
-.copy-btn {
+.chat-bubble.transcription {
     background-color: var(--primary-color);
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 5px;
 }
 
-.sidenav {
-    width: 350px;
+.chat-bubble.translation {
+    background-color: var(--translation-bubble-bg);
+    color: var(--text-color);
+    align-self: flex-start;
+    border-bottom-left-radius: 5px;
 }
 
-.sidenav .subheader {
-    font-size: 1.2rem;
-    font-weight: 500;
+.chat-bubble .spinner-border {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+    position: absolute;
+    bottom: 5px;
+    right: 8px;
+}
+
+.offcanvas-body {
+    display: flex;
+    flex-direction: column;
+}
+
+#history-container {
+    flex-grow: 1;
+}
+
+#history-container .history-item {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+#history-container .history-item:hover {
+    background-color: #f5f5f5;
+    cursor: pointer;
+}
+
+#history-container .transcription-text {
     color: var(--primary-color);
+    font-weight: 500;
 }
 
-#history-container a {
-    display: block;
-    padding: 10px 32px;
-    font-size: 1rem;
-    font-weight: 400;
-    line-height: 1.5;
-    white-space: normal;
-    height: auto;
+#history-container .translation-text {
+    color: var(--text-color);
 }
 
-#history-container a:hover {
-    background-color: rgba(0,0,0,0.05);
-}
-
-
-
-.card-action {
-    background-color: var(--surface-color);
-    border-radius: 0 0 20px 20px;
-    padding: 24px;
-}
-
-#record-btn {
-    background-color: #ef5350;
+#history-container .history-date {
+    font-size: 0.8rem;
+    color: #6c757d;
 }
 
 #record-btn.recording {
-    animation: pulse 1s infinite;
-}
-
-.btn-floating {
-    margin: 0 10px;
-}
-
-.switch label input[type=checkbox]:checked+.lever {
-    background-color: var(--secondary-color);
-}
-
-.switch label input[type=checkbox]:checked+.lever:after {
-    background-color: var(--primary-color);
+    animation: pulse 1.5s infinite;
 }
 
 @keyframes pulse {
     0% {
-        box-shadow: 0 0 0 0 rgba(239, 83, 80, 0.7);
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
     }
     70% {
-        box-shadow: 0 0 0 20px rgba(239, 83, 80, 0);
+        box-shadow: 0 0 0 15px rgba(220, 53, 69, 0);
     }
     100% {
-        box-shadow: 0 0 0 0 rgba(239, 83, 80, 0);
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
     }
 }
