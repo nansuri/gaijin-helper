@@ -94,7 +94,7 @@ This mode builds the optimized Vue application and serves it via Nginx, all with
 
 **To Run:** Execute the docker-compose command from the project root:
 ```bash
-docker-compose up --build
+docker-compose up -d --build
 ```
 **To Stop:** Press `Ctrl+C` or run `docker-compose down` from another terminal.
 
