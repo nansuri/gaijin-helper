@@ -1,6 +1,24 @@
+# Git
 .git
 .gitignore
-README.md
-docker-compose.yml
+
+# Docker
 Dockerfile
 .dockerignore
+
+# Dependencies
+node_modules
+
+# Build output
+dist
+
+# IDE
+.vscode
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store

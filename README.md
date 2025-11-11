@@ -1,40 +1,38 @@
-# Local Translator
+# .
 
-This is a simple web-based translation tool that uses the browser's built-in microphone and speech recognition capabilities, and the LibreTranslate API for translation.
+This template should help get you started developing with Vue 3 in Vite.
 
-## Features
+## Recommended IDE Setup
 
-*   Translate between English, Japanese, and Indonesian.
-*   Transcribe audio from the microphone.
-*   Translate the transcribed text.
-*   Speak the translated text.
+[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
 
-## How to Use
+## Recommended Browser Setup
 
-1.  Open the `index.html` file in a web browser. Google Chrome is recommended for compatibility with the Web Speech API.
-2.  Select the "from" and "to" languages using the dropdown menus.
-3.  Click the "Start Listening" button to start the real-time translation.
-4.  Speak into your microphone. The transcribed text will appear in the left text area, and the translated text will appear in the right text area in real-time.
-5.  Click the "Stop Listening" button to stop the translation.
-6.  Click the "Speak" button to hear the translated text.
+- Chromium-based browsers (Chrome, Edge, Brave, etc.):
+  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd) 
+  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
+- Firefox:
+  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
+  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
 
-## Dependencies
+## Customize configuration
 
-*   This tool uses the [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) for speech recognition, which is currently only supported by some browsers (notably Google Chrome).
-*   This tool is configured to use a **locally deployed LibreTranslate instance**.
+See [Vite Configuration Reference](https://vite.dev/config/).
 
-### Running LibreTranslate Locally with Podman
+## Project Setup
 
-To run LibreTranslate locally, you need to have Podman installed. Then, execute the following commands in your terminal:
+```sh
+npm install
+```
 
-1.  **Pull the LibreTranslate image:**
-    \`\`\`bash
-    podman pull libretranslate/libretranslate
-    \`\`\`
+### Compile and Hot-Reload for Development
 
-2.  **Run the LibreTranslate container:**
-    \`\`\`bash
-    podman run -it --rm -p 5050:5000 -e LT_LOAD_ONLY=\"en,id,ja\" libretranslate/libretranslate
-    \`\`\`
+```sh
+npm run dev
+```
 
-Once the container is running, LibreTranslate will be accessible at \`http://localhost:5050\`. The \`script.js\` file in this project is configured to use this endpoint for translations.
+### Compile and Minify for Production
+
+```sh
+npm run build
+```

@@ -1,79 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="">
+  <head>
     <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Local Translator</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <!-- History Offcanvas -->
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="history-offcanvas" aria-labelledby="history-offcanvas-label">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="history-offcanvas-label">Conversation History</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-            <div id="history-container"></div>
-            <div class="mt-auto">
-                <button class="btn btn-danger w-100" id="clear-history-btn"><i class="fas fa-trash"></i> Clear History</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="container-fluid d-flex flex-column vh-100 p-0">
-        <!-- Header -->
-        <header class="bg-primary text-white p-3 d-flex justify-content-between align-items-center shadow-sm">
-            <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#history-offcanvas" aria-controls="history-offcanvas">
-                <i class="fas fa-history"></i>
-            </button>
-            <h1 class="h5 mb-0">Real-time Conversation Translator</h1>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" id="auto-speak">
-                <label class="form-check-label" for="auto-speak">Auto Speak</label>
-            </div>
-        </header>
-
-        <!-- Chat Container -->
-        <main id="chat-container" class="flex-grow-1 p-3"></main>
-
-        <!-- Footer -->
-        <footer class="bg-light p-3 border-top">
-            <div class="d-flex align-items-center">
-                <div class="flex-grow-1 me-2">
-                    <div class="row g-2 align-items-center">
-                        <div class="col">
-                            <select id="from-language" class="form-select">
-                                <option value="en" selected>English</option>
-                                <option value="ja">Japanese</option>
-                                <option value="id">Indonesian</option>
-                            </select>
-                        </div>
-                        <div class="col-auto">
-                            <button class="btn btn-secondary" id="swap-btn"><i class="fas fa-exchange-alt"></i></button>
-                        </div>
-                        <div class="col">
-                            <select id="to-language" class="form-select">
-                                <option value="en">English</option>
-                                <option value="ja" selected>Japanese</option>
-                                <option value="id">Indonesian</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <button class="btn btn-danger btn-lg rounded-circle me-2" id="record-btn" style="width: 60px; height: 60px;"><i class="fas fa-microphone"></i></button>
-                <button class="btn btn-info btn-lg rounded-circle me-2" id="speak-btn" style="width: 60px; height: 60px;"><i class="fas fa-volume-up"></i></button>
-                <button class="btn btn-warning btn-lg rounded-circle" id="clear-btn" style="width: 60px; height: 60px;"><i class="fas fa-sync-alt"></i></button>
-            </div>
-        </footer>
-    </div>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="src/main.js" type="module"></script>
-</body>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
 </html>
