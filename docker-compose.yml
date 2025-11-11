@@ -5,7 +5,7 @@ services:
     build:
       context: .
       args:
-        VITE_LIBRETRANSLATE_API_URL: https://translate.justnansuri.com/api
+        VITE_LIBRETRANSLATE_API_URL: https://translate-api.justnansuri.com
     ports:
       - "8090:80"
     depends_on:
