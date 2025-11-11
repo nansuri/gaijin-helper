@@ -15,6 +15,7 @@ const fromLanguage = ref('en');
 const toLanguage = ref('ja');
 const messages = ref<Message[]>([]);
 const chatContainer = ref<HTMLElement | null>(null);
+const autoSpeak = ref(false);
 let messageIdCounter = 0;
 let translationTimeout: number | undefined;
 
@@ -96,9 +97,14 @@ const translate = async (text: string) => {
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const data = await res.json();
+    const translatedText = data.translatedText;
     
     const index = messages.value.findIndex(m => m.id === translationMessage.id);
-    if (index !== -1) messages.value[index].text = data.translatedText;
+    if (index !== -1) messages.value[index].text = translatedText;
+
+    if (autoSpeak.value) {
+      speak(translatedText);
+    }
 
   } catch (error) {
     console.error('Translation error:', error);
@@ -107,10 +113,15 @@ const translate = async (text: string) => {
   }
 };
 
-const speak = () => {
-  const lastTranslation = messages.value.filter(m => m.type === 'translation').pop();
-  if (lastTranslation?.text) {
-    const utterance = new SpeechSynthesisUtterance(lastTranslation.text);
+const speak = (textToSpeak?: string) => {
+  let text = textToSpeak;
+  if (!text) {
+    const lastTranslation = messages.value.filter(m => m.type === 'translation').pop();
+    text = lastTranslation?.text;
+  }
+  
+  if (text) {
+    const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = toLanguage.value;
     speechSynthesis.speak(utterance);
   }
@@ -126,6 +137,10 @@ const clearText = () => {
   <div class="container-fluid d-flex flex-column vh-100 p-0">
     <header class="bg-primary text-white p-3 d-flex justify-content-between align-items-center shadow-sm">
       <h1 class="h5 mb-0">Real-time Conversation Translator</h1>
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" role="switch" id="auto-speak" v-model="autoSpeak">
+        <label class="form-check-label" for="auto-speak">Auto Speak</label>
+      </div>
     </header>
 
     <main ref="chatContainer" class="flex-grow-1 p-3 d-flex flex-column">
@@ -159,7 +174,7 @@ const clearText = () => {
         <button class="btn btn-lg rounded-circle mx-3" :class="isListening ? 'btn-danger' : 'btn-primary'" @click="toggleListening" title="Start/Stop Listening">
           <i class="fas fa-microphone"></i>
         </button>
-        <button class="btn btn-info mx-2" @click="speak" title="Speak Translation"><i class="fas fa-volume-up"></i></button>
+        <button class="btn btn-info mx-2" @click="speak()" title="Speak Translation"><i class="fas fa-volume-up"></i></button>
         <button class="btn btn-warning mx-2" @click="clearText" title="Clear Text"><i class="fas fa-sync-alt"></i></button>
       </div>
     </footer>
@@ -174,5 +189,8 @@ main {
     max-width: 600px;
     margin: 0 auto;
     width: 100%;
+}
+.form-check-label {
+    color: white;
 }
 </style>
