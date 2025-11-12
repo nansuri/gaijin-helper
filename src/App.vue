@@ -617,4 +617,35 @@ const clearText = () => {
     box-shadow: 0 0 0 0 rgba(255, 82, 82, 0);
   }
 }
+
+@media (max-width: 600px) {
+  .translation-window {
+    padding: 0.75rem; /* Reduced padding for smaller screens */
+  }
+
+  .app-header {
+    padding: 0.5rem 1rem;
+  }
+
+  .app-title {
+    font-size: 1.1rem;
+  }
+
+  .app-description {
+    font-size: 0.75rem;
+  }
+
+  .header-controls {
+    gap: 0.5rem;
+  }
+
+  .conversation-history {
+    gap: 0.75rem;
+  }
+
+  .bubble {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.9rem;
+  }
+}
 </style>
