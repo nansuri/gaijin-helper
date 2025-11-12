@@ -1,25 +1,37 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-
 const props = defineProps<{
-  modelValue: boolean; // Controls visibility of the modal
-  saveConversation: () => void;
-  loadConversation: () => void;
-  clearSavedConversation: () => void;
+  modelValue: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void;
+  (e: 'save-conversation'): void;
+  (e: 'load-conversation'): void;
+  (e: 'clear-saved-conversation'): void;
 }>();
 
 const closeUserModal = () => {
   emit('update:modelValue', false);
 };
 
-// Placeholder for register functionality
 const registerUser = () => {
   alert('Register functionality coming soon!');
-  closeUserModal(); // Close modal after action
+  closeUserModal();
+};
+
+const handleSaveConversation = () => {
+  emit('save-conversation');
+  closeUserModal();
+};
+
+const handleLoadConversation = () => {
+  emit('load-conversation');
+  closeUserModal();
+};
+
+const handleClearSavedConversation = () => {
+  emit('clear-saved-conversation');
+  closeUserModal();
 };
 </script>
 
@@ -30,9 +42,9 @@ const registerUser = () => {
 
       <div class="user-actions-section">
         <button @click="registerUser" class="action-button">Register</button>
-        <button @click="props.saveConversation" class="action-button">Save Current Conversation</button>
-        <button @click="props.loadConversation" class="action-button">Load Last Conversation</button>
-        <button @click="props.clearSavedConversation" class="action-button danger-button">Clear Saved Conversation</button>
+        <button @click="handleSaveConversation" class="action-button">Save Current Conversation</button>
+        <button @click="handleLoadConversation" class="action-button">Load Last Conversation</button>
+        <button @click="handleClearSavedConversation" class="action-button danger-button">Clear Saved Conversation</button>
       </div>
     </div>
   </div>
@@ -96,7 +108,7 @@ const registerUser = () => {
 }
 
 .action-button:hover {
-  background-color: var(--accent-dark);
+  background-color: #0b5ed7;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px var(--shadow-color);
 }

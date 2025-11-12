@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { useSpeechRecognition } from './composables/useSpeechRecognition';
 
 // Import SVG Icons
@@ -8,39 +8,35 @@ import SwapHorizontal from 'vue-material-design-icons/SwapHorizontal.vue';
 import Play from 'vue-material-design-icons/Play.vue';
 import Microphone from 'vue-material-design-icons/Microphone.vue';
 import TrashCanOutline from 'vue-material-design-icons/TrashCanOutline.vue';
-import WeatherNight from 'vue-material-design-icons/WeatherNight.vue';
-import WhiteBalanceSunny from 'vue-material-design-icons/WhiteBalanceSunny.vue';
 import AccountOutline from 'vue-material-design-icons/AccountOutline.vue';
 import AccountCircleOutline from 'vue-material-design-icons/AccountCircleOutline.vue';
-import RobotOutline from 'vue-material-design-icons/RobotOutline.vue';
-import CogOutline from 'vue-material-design-icons/CogOutline.vue'; // New icon for settings
-import SettingsModal from './components/SettingsModal.vue'; // Import the new SettingsModal component
+import CogOutline from 'vue-material-design-icons/CogOutline.vue';
+import SettingsModal from './components/SettingsModal.vue';
+import UserModal from './components/UserModal.vue';
 
 // --- State ---
 const fromLanguage = ref('en');
 const toLanguage = ref('ja');
-const currentTranscription = ref('');
-const currentTranslation = ref('');
 const isTranslating = ref(false);
 const autoSpeak = ref(false);
 const theme = ref<'light' | 'dark'>('dark');
 const wasListeningBeforeSpeak = ref(false);
 let translationTimeout: number | undefined;
-const appMode = ref<'translation' | 'transcribeOnly'>('translation'); // New state for app mode
-const showSettings = ref(false); // New state for settings menu visibility
-const showProfileActions = ref(false); // New state for profile actions visibility
+const appMode = ref<'translation' | 'transcribeOnly'>('translation');
+const showSettings = ref(false);
+const showProfileActions = ref(false);
 const conversationHistory = ref<{
   transcription: string;
   translation: string;
   fromLanguage: string;
   toLanguage: string;
-}[]>([]); // New state for conversation history
+}[]>([]);
 const currentTurn = ref<{
   transcription: string;
   translation: string;
   fromLanguage: string;
   toLanguage: string;
-}>({ transcription: '', translation: '', fromLanguage: fromLanguage.value, toLanguage: toLanguage.value }); // New state for the current turn
+}>({ transcription: '', translation: '', fromLanguage: fromLanguage.value, toLanguage: toLanguage.value });
 
 // --- Composables ---
 const {
@@ -57,10 +53,17 @@ onMounted(() => {
   const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
   if (savedTheme) {
     theme.value = savedTheme;
+    document.documentElement.className = savedTheme;
   } else {
+    theme.value = 'dark';
     document.documentElement.className = 'dark';
   }
-  loadConversation(); // Load conversation history on mount
+  loadConversation();
+});
+
+onUnmounted(() => {
+  clearTimeout(translationTimeout);
+  stopRecognition();
 });
 
 watch(transcription, (newTranscription) => {
@@ -105,8 +108,14 @@ const saveConversation = () => {
 const loadConversation = () => {
   const savedHistory = localStorage.getItem('gaijin-helper-conversation-history');
   if (savedHistory) {
-    conversationHistory.value = JSON.parse(savedHistory);
-    alert('Conversation loaded!');
+    try {
+      conversationHistory.value = JSON.parse(savedHistory);
+      alert('Conversation loaded!');
+    } catch (error) {
+      console.error('Failed to parse saved conversation:', error);
+      alert('Error loading conversation. Data may be corrupted.');
+      localStorage.removeItem('gaijin-helper-conversation-history');
+    }
   }
 };
 
@@ -138,11 +147,10 @@ const swapLanguages = () => {
 const translate = async (text: string) => {
   if (!text || appMode.value === 'transcribeOnly') return;
   isTranslating.value = true;
-  currentTurn.value.translation = ''; // Clear current translation while translating
+  currentTurn.value.translation = '';
 
   try {
-const LIBRETRANSLATE_API_URL = 'https://translate-api.justnansuri.com';
-// ...
+    const LIBRETRANSLATE_API_URL = import.meta.env.VITE_LIBRETRANSLATE_API_URL || 'https://translate-api.justnansuri.com';
     const res = await fetch(`${LIBRETRANSLATE_API_URL}/translate`, {
       method: 'POST',
       body: JSON.stringify({ q: text, source: fromLanguage.value, target: toLanguage.value, format: 'text' }),
@@ -153,13 +161,12 @@ const LIBRETRANSLATE_API_URL = 'https://translate-api.justnansuri.com';
     const translatedText = data.translatedText;
     
     currentTurn.value.translation = translatedText;
-    conversationHistory.value.push({ ...currentTurn.value }); // Add current turn to history
-    currentTurn.value = { transcription: '', translation: '', fromLanguage: fromLanguage.value, toLanguage: toLanguage.value }; // Reset current turn
+    conversationHistory.value.push({ ...currentTurn.value });
+    currentTurn.value = { transcription: '', translation: '', fromLanguage: fromLanguage.value, toLanguage: toLanguage.value };
     
     if (autoSpeak.value) {
       speak(translatedText);
     } else {
-      // Auto-restart the microphone if it was listening
       if (isSupported && !isListening.value) {
         startRecognition();
       }
@@ -168,7 +175,6 @@ const LIBRETRANSLATE_API_URL = 'https://translate-api.justnansuri.com';
   } catch (error) {
     console.error('Translation error:', error);
     currentTurn.value.translation = 'Error: Could not translate.';
-    // Auto-restart the microphone if it was listening
     if (isSupported && !isListening.value) {
       startRecognition();
     }
@@ -227,14 +233,14 @@ const clearText = () => {
           <p class="app-description">Real-time Conversation Translator</p>
         </div>
       </div>
-              <div class="header-controls">
-                <button @click="showSettings = !showSettings" class="control-button settings-button" title="Settings">
-                  <CogOutline :size="24" />
-                </button>
-                <button @click="showProfileActions = !showProfileActions" class="control-button profile-button" title="Profile">
-                  <AccountOutline :size="24" />
-                </button>
-              </div>    </header>
+      <div class="header-controls">
+        <button @click="showSettings = !showSettings" class="control-button settings-button" title="Settings" aria-label="Open Settings">
+          <CogOutline :size="24" />
+        </button>
+        <button @click="showProfileActions = !showProfileActions" class="control-button profile-button" title="Profile" aria-label="Open Profile Actions">
+          <AccountOutline :size="24" />
+        </button>
+      </div>    </header>
 
     <main class="translation-window">
       <div class="conversation-history">
@@ -272,7 +278,7 @@ const clearText = () => {
             <option value="id">Indonesian</option>
           </select>
         </div>
-        <button @click="swapLanguages" class="control-button" title="Swap Languages">
+        <button @click="swapLanguages" class="control-button" title="Swap Languages" aria-label="Swap Languages">
           <SwapHorizontal />
         </button>
         <div class="select-wrapper">
@@ -284,14 +290,14 @@ const clearText = () => {
         </div>
       </div>
       <div class="main-controls">
-        <button @click="speak()" class="control-button" title="Speak Translation">
+        <button @click="speak()" class="control-button" title="Speak Translation" aria-label="Speak Translation">
           <Play />
         </button>
 
-        <button @click="toggleListening" class="mic-button" :class="{ 'recording': isListening }" title="Start/Stop Listening">
+        <button @click="toggleListening" class="mic-button" :class="{ 'recording': isListening }" title="Start/Stop Listening" aria-label="Toggle Microphone">
           <Microphone :size="36" />
         </button>
-        <button @click="clearText" class="control-button" title="Clear Messages">
+        <button @click="clearText" class="control-button" title="Clear Messages" aria-label="Clear All Messages">
           <TrashCanOutline />
         </button>
       </div>
