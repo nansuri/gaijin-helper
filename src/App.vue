@@ -2,15 +2,10 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { useSpeechRecognition } from './composables/useSpeechRecognition';
 
-// Import SVG Icons
-import Translate from 'vue-material-design-icons/Translate.vue';
-import SwapHorizontal from 'vue-material-design-icons/SwapHorizontal.vue';
-import Play from 'vue-material-design-icons/Play.vue';
-import Microphone from 'vue-material-design-icons/Microphone.vue';
-import TrashCanOutline from 'vue-material-design-icons/TrashCanOutline.vue';
-import AccountOutline from 'vue-material-design-icons/AccountOutline.vue';
-import AccountCircleOutline from 'vue-material-design-icons/AccountCircleOutline.vue';
-import CogOutline from 'vue-material-design-icons/CogOutline.vue';
+// Import Components
+import AppHeader from './components/AppHeader.vue';
+import ConversationDisplay from './components/ConversationDisplay.vue';
+import ControlsFooter from './components/ControlsFooter.vue';
 import SettingsModal from './components/SettingsModal.vue';
 import UserModal from './components/UserModal.vue';
 
@@ -243,87 +238,33 @@ const clearText = () => {
 </script>
 
 <template>
-  <div id="app-container" :class="theme">
-    <header class="app-header">
-      <div class="title-group">
-        <Translate :size="32" class="title-icon" />
-        <div>
-          <h1 class="app-title">Gaijin Helper</h1>
-          <p class="app-description">Real-time Conversation Translator</p>
-        </div>
-      </div>
-      <div class="header-controls">
-        <button @click="showSettings = !showSettings" class="control-button settings-button" title="Settings" aria-label="Open Settings">
-          <CogOutline :size="24" />
-        </button>
-        <button @click="showProfileActions = !showProfileActions" class="control-button profile-button" title="Profile" aria-label="Open Profile Actions">
-          <AccountOutline :size="24" />
-        </button>
-      </div>    </header>
+  <div id="app" :class="theme">
+    <AppHeader
+      @settings-click="showSettings = true"
+      @profile-click="showProfileActions = true"
+    />
 
-    <main class="translation-window">
-      <div class="conversation-history">
-        <div v-for="(turn, index) in conversationHistory" :key="index" class="conversation-turn">
-          <div class="speaker-icon">
-            <AccountCircleOutline :size="24" v-if="turn.transcription" />
-          </div>
-          <div class="bubble">
-            <p class="transcription-text">From ({{ turn.fromLanguage.toUpperCase() }}): {{ turn.transcription }}</p>
-            <p class="translation-text" v-if="appMode === 'translation'">To ({{ turn.toLanguage.toUpperCase() }}): {{ turn.translation }}</p>
-          </div>
-        </div>
-        <!-- Current active turn -->
-        <div v-if="currentTurn.transcription || isListening" class="conversation-turn current-active-turn">
-          <div class="speaker-icon">
-            <AccountCircleOutline :size="24" v-if="currentTurn.transcription || isListening" />
-          </div>
-          <div class="bubble">
-            <p class="transcription-text">From ({{ fromLanguage.toUpperCase() }}): {{ currentTurn.transcription || 'Waiting for you to speak...' }}</p>
-            <p class="translation-text" v-if="appMode === 'translation'">
-              <span v-if="isTranslating" class="spinner"></span>
-              <span v-else>To ({{ toLanguage.toUpperCase() }}): {{ currentTurn.translation || 'Translation will appear here.' }}</span>
-            </p>
-          </div>
-        </div>
-      </div>
-    </main>
+    <ConversationDisplay
+      :history="conversationHistory"
+      :current-turn="currentTurn"
+      :is-listening="isListening"
+      :is-translating="isTranslating"
+      :app-mode="appMode"
+    />
 
-    <footer class="app-footer">
-      <div class="language-controls">
-        <div class="select-wrapper">
-          <select class="language-select" v-model="fromLanguage">
-            <option value="en">English</option>
-            <option value="ja">Japanese</option>
-            <option value="id">Indonesian</option>
-          </select>
-        </div>
-        <button @click="swapLanguages" class="control-button" title="Swap Languages" aria-label="Swap Languages">
-          <SwapHorizontal />
-        </button>
-        <div class="select-wrapper">
-          <select class="language-select" v-model="toLanguage">
-            <option value="en">English</option>
-            <option value="ja">Japanese</option>
-            <option value="id">Indonesian</option>
-          </select>
-        </div>
-      </div>
-      <div class="main-controls">
-        <button @click="speak()" class="control-button" :class="{ 'speaking': isSpeaking }" title="Speak Translation / Stop" aria-label="Speak Translation or Stop">
-          <Play />
-        </button>
+    <ControlsFooter
+      :from-language="fromLanguage"
+      :to-language="toLanguage"
+      :is-listening="isListening"
+      :is-speaking="isSpeaking"
+      @swap-languages="swapLanguages"
+      @speak-click="speak()"
+      @mic-click="toggleListening"
+      @clear-click="clearText"
+      @language-from="(lang) => (fromLanguage = lang)"
+      @language-to="(lang) => (toLanguage = lang)"
+    />
 
-        <button @click="toggleListening" class="mic-button" :class="{ 'recording': isListening }" title="Start/Stop Listening" aria-label="Toggle Microphone">
-          <Microphone :size="36" />
-        </button>
-        <button @click="clearText" class="control-button" title="Clear Messages" aria-label="Clear All Messages">
-          <TrashCanOutline />
-        </button>
-      </div>
-      <div class="copyright">
-        Copyright &copy; Nansuri 2025
-      </div>
-    </footer>
     <SettingsModal
       v-model="showSettings"
       :theme="theme"
@@ -343,394 +284,12 @@ const clearText = () => {
 </template>
 
 <style scoped>
-#app-container {
+#app {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  min-height: 100dvh;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   transition: background-color 0.3s, color 0.3s;
-}
-
-.app-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid var(--border-color);
-  flex-shrink: 0;
-}
-
-.title-group {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.title-icon {
-  color: var(--accent-primary);
-}
-
-.app-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin: 0;
-}
-
-.app-description {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-.header-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem; /* Adjusted gap for the two new buttons */
-}
-
-.control-switch input {
-  accent-color: var(--accent-primary);
-}
-
-.theme-toggle {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: transform 0.2s, color 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.theme-toggle:hover {
-  color: var(--accent-primary);
-  transform: scale(1.1);
-}
-
-.translation-window {
-  flex-grow: 1;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start; /* Align items to the start to push bubbles up */
-  padding: 1.5rem;
-  overflow-y: auto;
-}
-
-.conversation-history {
-  width: 100%;
-  max-width: 900px;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding-bottom: 1rem; /* Add some padding at the bottom */
-}
-
-.conversation-turn {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-}
-
-.speaker-icon {
-  flex-shrink: 0;
-  color: var(--text-secondary);
-  margin-top: 0.25rem; /* Align icon with the top of the bubble */
-}
-
-.bubble {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 0.75rem 1rem;
-  max-width: 80%;
-  word-wrap: break-word;
-  font-size: 1rem;
-  line-height: 1.5;
-  color: var(--text-primary);
-  flex-grow: 1;
-}
-
-.bubble p {
-  margin: 0;
-}
-
-.transcription-text {
-  font-weight: 500;
-  color: var(--accent-primary);
-  margin-bottom: 0.5rem;
-}
-
-.translation-text {
-  color: var(--text-primary);
-  font-style: italic;
-}
-
-.current-active-turn {
-  margin-top: 1.5rem; /* Space between history and current input */
-}
-
-.panel {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 1.5rem;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 4px 12px var(--shadow-color);
-}
-
-.panel-header {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.panel-content {
-  flex-grow: 1;
-  font-size: 1.5rem;
-  line-height: 1.6;
-  color: var(--text-primary);
-}
-
-.transcription-panel .panel-content {
-  color: var(--accent-primary);
-  font-weight: 500;
-}
-
-.app-footer {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  border-top: 1px solid var(--border-color);
-  background-color: var(--bg-secondary);
-  box-shadow: 0 -2px 10px var(--shadow-color);
-  flex-shrink: 0;
-}
-
-.language-controls {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-}
-
-.select-wrapper {
-  position: relative;
-  flex-grow: 1;
-  max-width: 300px;
-}
-
-.language-select {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 0.5rem 2.5rem 0.5rem 0.75rem;
-  font-family: var(--font-sans);
-  width: 100%;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-}
-
-.select-wrapper::after {
-  content: '▼';
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-.main-controls {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-}
-
-.setting-item.auto-speak-control {
-  width: 120px; /* Give it a defined width to control spacing */
-}
-
-.setting-item.auto-speak-control > label { /* Target the new outer label */
-  display: flex;
-  justify-content: space-between; /* Ensure space between label and switch */
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  color: var(--text-primary);
-  width: 100%; /* Make the label take full width of its parent div */
-}
-
-.control-button {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-  width: 55px;
-  height: 55px;
-  border-radius: 50%;
-  font-size: 1.2rem;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: all 0.2s ease-in-out;
-  box-shadow: 0 2px 5px var(--shadow-color);
-}
-.control-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px var(--shadow-color);
-  color: var(--accent-primary);
-  border-color: var(--accent-primary);
-}
-.control-button.speaking {
-  background-color: var(--accent-primary);
-  color: white;
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 0 0 var(--accent-primary);
-  animation: pulse-speak 1.5s infinite;
-}
-
-.mic-button {
-  background-color: var(--accent-primary);
-  color: white;
-  border: none;
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px -5px var(--accent-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.mic-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px -5px var(--accent-primary);
-}
-.mic-button.recording {
-  background-color: var(--accent-dark); /* A more vibrant color when recording */
-  animation: pulse 1.5s infinite;
-}
-
-.copyright {
-  text-align: center;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin-top: 0.5rem;
-}
-
-.spinner {
-  width: 24px;
-  height: 24px;
-  margin: 0 0.5rem;
-  border: 3px solid var(--border-color);
-  border-bottom-color: var(--accent-primary);
-  border-radius: 50%;
-  display: inline-block;
-  box-sizing: border-box;
-  animation: rotation 1s linear infinite;
-}
-
-@keyframes rotation {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7);
-  }
-  70% {
-    box-shadow: 0 0 0 15px rgba(255, 82, 82, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(255, 82, 82, 0);
-  }
-}
-
-@keyframes pulse-speak {
-  0% {
-    box-shadow: 0 0 0 0 var(--accent-primary);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(77, 171, 247, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(77, 171, 247, 0);
-  }
-}
-
-@media (max-width: 600px) {
-  .translation-window {
-    padding: 0.5rem; /* Reduced padding for smaller screens */
-  }
-
-  .app-header {
-    padding: 0.5rem 0.75rem;
-  }
-
-  .app-title {
-    font-size: 1.1rem;
-  }
-
-  .app-description {
-    font-size: 0.75rem;
-  }
-
-  .header-controls {
-    gap: 0.5rem;
-  }
-
-  .conversation-history {
-    gap: 0.5rem;
-  }
-
-  .bubble {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.9rem;
-  }
-
-  .app-footer {
-    padding: 0.75rem 1rem;
-    gap: 0.75rem;
-  }
-
-  .language-controls {
-    gap: 0.75rem;
-  }
-
-  .main-controls {
-    gap: 0.75rem;
-  }
-
-  .control-button {
-    width: 50px;
-    height: 50px;
-  }
-
-  .mic-button {
-    width: 60px;
-    height: 60px;
-  }
-
-  .copyright {
-    font-size: 0.7rem;
-    margin-top: 0.25rem;
-  }
 }
 </style>
