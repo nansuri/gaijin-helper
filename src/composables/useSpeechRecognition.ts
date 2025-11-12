@@ -5,6 +5,7 @@ export function useSpeechRecognition(language: Ref<string>) {
   const isListening = ref(false);
   const transcription = ref('');
   const isFinal = ref(false);
+  const finalCount = ref(0); // Track how many times final result occurred
   const error = ref<string | null>(null);
   let lastFinalTime = 0;
 
@@ -25,6 +26,7 @@ export function useSpeechRecognition(language: Ref<string>) {
 
     recognition.onend = () => {
       isListening.value = false;
+      // Reset isFinal when recognition ends so it can trigger again on next recognition
       isFinal.value = false;
     };
 
@@ -46,6 +48,7 @@ export function useSpeechRecognition(language: Ref<string>) {
       transcription.value = final + interim;
       if (final !== '') {
         isFinal.value = true;
+        finalCount.value++; // Increment counter to force watcher trigger
         lastFinalTime = Date.now();
       }
     };
@@ -91,6 +94,7 @@ export function useSpeechRecognition(language: Ref<string>) {
     isListening,
     transcription,
     isFinal,
+    finalCount,
     error,
     start,
     stop,

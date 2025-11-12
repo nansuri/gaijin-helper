@@ -18,6 +18,7 @@ const isSpeaking = ref(false);
 const theme = ref<'light' | 'dark'>('dark');
 const wasListeningBeforeSpeak = ref(false);
 let translationTimeout: number | undefined;
+let pendingTranslation = false; // Track if translation is pending to avoid duplicate triggers
 const appMode = ref<'translation' | 'transcribeOnly'>('translation');
 const showSettings = ref(false);
 const showProfileActions = ref(false);
@@ -40,6 +41,7 @@ const {
   isListening,
   transcription,
   isFinal,
+  finalCount,
   start: startRecognition,
   stop: stopRecognition,
 } = useSpeechRecognition(fromLanguage);
@@ -67,8 +69,9 @@ watch(transcription, (newTranscription) => {
   currentTurn.value.fromLanguage = fromLanguage.value; // Update language
 });
 
-watch(isFinal, (newIsFinal) => {
-  if (newIsFinal) {
+watch(finalCount, (newCount) => {
+  if (newCount > 0 && !pendingTranslation && currentTurn.value.transcription.trim()) {
+    pendingTranslation = true;
     clearTimeout(translationTimeout);
     // Increased timeout to 2 seconds to allow user to continue speaking after a pause
     // This prevents premature translation when user pauses mid-sentence
@@ -132,6 +135,7 @@ const toggleListening = () => {
     stopRecognition();
   } else {
     clearText();
+    pendingTranslation = false; // Reset pending flag when starting new recognition
     startRecognition();
   }
 };
@@ -161,6 +165,7 @@ const translate = async (text: string) => {
     currentTurn.value.translation = translatedText;
     conversationHistory.value.push({ ...currentTurn.value });
     currentTurn.value = { transcription: '', translation: '', fromLanguage: fromLanguage.value, toLanguage: toLanguage.value };
+    pendingTranslation = false; // Reset flag after translation
     
     if (autoSpeak.value) {
       speak(translatedText);
@@ -173,6 +178,7 @@ const translate = async (text: string) => {
   } catch (error) {
     console.error('Translation error:', error);
     currentTurn.value.translation = 'Error: Could not translate.';
+    pendingTranslation = false; // Reset flag on error too
     if (isSupported && !isListening.value) {
       startRecognition();
     }
