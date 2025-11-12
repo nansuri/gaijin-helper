@@ -619,7 +619,7 @@ const clearText = () => {
 }
 
 /* Responsive adjustments for smaller screens */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .app-header {
     padding: 0.5rem 1rem;
   }
@@ -650,39 +650,26 @@ const clearText = () => {
   }
 
   .app-footer {
-    padding: 0.75rem 0.5rem; /* Reduced horizontal padding */
+    padding: 0.75rem 1rem;
     gap: 0.75rem;
   }
 
   .language-controls {
-    flex-wrap: wrap; /* Allow items to wrap */
-    justify-content: center;
-    gap: 0.5rem; /* Reduced gap */
+    flex-direction: column;
+    gap: 0.75rem;
   }
 
   .select-wrapper {
-    flex-basis: 45%; /* Allow two selects per row */
-    max-width: unset; /* Remove max-width constraint */
-  }
-
-  .language-select {
-    padding: 0.4rem 2rem 0.4rem 0.5rem; /* Adjusted padding */
-    font-size: 0.9rem;
-  }
-
-  .select-wrapper::after {
-    right: 0.75rem;
-    font-size: 0.7rem;
+    max-width: 100%; /* Allow language selects to take full width */
   }
 
   .main-controls {
-    flex-wrap: wrap; /* Allow buttons to wrap */
-    gap: 0.5rem; /* Reduced gap */
+    gap: 0.75rem;
   }
 
   .control-button {
-    width: 45px;
-    height: 45px;
+    width: 48px;
+    height: 48px;
     font-size: 1rem;
   }
 
