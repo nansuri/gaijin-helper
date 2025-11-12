@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import { useSpeechRecognition } from './composables/useSpeechRecognition';
 
 // Import SVG Icons
@@ -10,6 +10,11 @@ import Microphone from 'vue-material-design-icons/Microphone.vue';
 import TrashCanOutline from 'vue-material-design-icons/TrashCanOutline.vue';
 import WeatherNight from 'vue-material-design-icons/WeatherNight.vue';
 import WhiteBalanceSunny from 'vue-material-design-icons/WhiteBalanceSunny.vue';
+import AccountOutline from 'vue-material-design-icons/AccountOutline.vue';
+import AccountCircleOutline from 'vue-material-design-icons/AccountCircleOutline.vue';
+import RobotOutline from 'vue-material-design-icons/RobotOutline.vue';
+import CogOutline from 'vue-material-design-icons/CogOutline.vue'; // New icon for settings
+import SettingsModal from './components/SettingsModal.vue'; // Import the new SettingsModal component
 
 // --- State ---
 const fromLanguage = ref('en');
@@ -21,6 +26,21 @@ const autoSpeak = ref(false);
 const theme = ref<'light' | 'dark'>('dark');
 const wasListeningBeforeSpeak = ref(false);
 let translationTimeout: number | undefined;
+const appMode = ref<'translation' | 'transcribeOnly'>('translation'); // New state for app mode
+const showSettings = ref(false); // New state for settings menu visibility
+const showProfileActions = ref(false); // New state for profile actions visibility
+const conversationHistory = ref<{
+  transcription: string;
+  translation: string;
+  fromLanguage: string;
+  toLanguage: string;
+}[]>([]); // New state for conversation history
+const currentTurn = ref<{
+  transcription: string;
+  translation: string;
+  fromLanguage: string;
+  toLanguage: string;
+}>({ transcription: '', translation: '', fromLanguage: fromLanguage.value, toLanguage: toLanguage.value }); // New state for the current turn
 
 // --- Composables ---
 const {
@@ -43,14 +63,15 @@ onMounted(() => {
 });
 
 watch(transcription, (newTranscription) => {
-  currentTranscription.value = newTranscription;
+  currentTurn.value.transcription = newTranscription;
+  currentTurn.value.fromLanguage = fromLanguage.value; // Update language
 });
 
 watch(isFinal, (newIsFinal) => {
   if (newIsFinal) {
     clearTimeout(translationTimeout);
     translationTimeout = setTimeout(() => {
-      translate(transcription.value.trim());
+      translate(currentTurn.value.transcription.trim());
     }, 400);
   }
 });
@@ -58,6 +79,19 @@ watch(isFinal, (newIsFinal) => {
 watch(theme, (newTheme) => {
   document.documentElement.className = newTheme;
   localStorage.setItem('theme', newTheme);
+});
+
+watch(fromLanguage, (newLang, oldLang) => {
+  if (newLang !== oldLang) {
+    if (isListening.value) {
+      stopRecognition();
+      // A small delay might be needed before restarting, but often not.
+      // The useSpeechRecognition composable should handle re-initializing with the new language.
+      startRecognition();
+    }
+    // Clear current turn and history to avoid displaying old language data
+    clearText();
+  }
 });
 
 // --- Functions ---
@@ -76,15 +110,17 @@ const toggleListening = () => {
 
 const swapLanguages = () => {
   [fromLanguage.value, toLanguage.value] = [toLanguage.value, fromLanguage.value];
+  currentTurn.value.fromLanguage = fromLanguage.value;
+  currentTurn.value.toLanguage = toLanguage.value;
 };
 
 const translate = async (text: string) => {
-  if (!text) return;
+  if (!text || appMode.value === 'transcribeOnly') return;
   isTranslating.value = true;
-  currentTranslation.value = '';
+  currentTurn.value.translation = ''; // Clear current translation while translating
 
   try {
-const LIBRETRANSLATE_API_URL = import.meta.env.VITE_LIBRETRANSLATE_API_URL || 'http://localhost:5050';
+const LIBRETRANSLATE_API_URL = 'https://translate-api.justnansuri.com';
 // ...
     const res = await fetch(`${LIBRETRANSLATE_API_URL}/translate`, {
       method: 'POST',
@@ -95,19 +131,21 @@ const LIBRETRANSLATE_API_URL = import.meta.env.VITE_LIBRETRANSLATE_API_URL || 'h
     const data = await res.json();
     const translatedText = data.translatedText;
     
-    currentTranslation.value = translatedText;
+    currentTurn.value.translation = translatedText;
+    conversationHistory.value.push({ ...currentTurn.value }); // Add current turn to history
+    currentTurn.value = { transcription: '', translation: '', fromLanguage: fromLanguage.value, toLanguage: toLanguage.value }; // Reset current turn
     if (autoSpeak.value) speak(translatedText);
 
   } catch (error) {
     console.error('Translation error:', error);
-    currentTranslation.value = 'Error: Could not translate.';
+    currentTurn.value.translation = 'Error: Could not translate.';
   } finally {
     isTranslating.value = false;
   }
 };
 
 const speak = (textToSpeak?: string) => {
-  let text = textToSpeak || currentTranslation.value;
+  let text = textToSpeak || currentTurn.value.translation;
   if (text) {
     wasListeningBeforeSpeak.value = isListening.value;
     if (isListening.value) {
@@ -129,12 +167,8 @@ const speak = (textToSpeak?: string) => {
 };
 
 const clearText = () => {
-  currentTranscription.value = '';
-  currentTranslation.value = '';
-};
-
-const toggleTheme = () => {
-  theme.value = theme.value === 'light' ? 'dark' : 'light';
+  currentTurn.value = { transcription: '', translation: '', fromLanguage: fromLanguage.value, toLanguage: toLanguage.value };
+  conversationHistory.value = []; // Clear history
 };
 </script>
 
@@ -148,29 +182,37 @@ const toggleTheme = () => {
           <p class="app-description">Real-time Conversation Translator</p>
         </div>
       </div>
-      <div class="header-controls">
-        <div class="control-switch">
-          <input id="auto-speak" type="checkbox" v-model="autoSpeak">
-          <label for="auto-speak">Auto Speak</label>
-        </div>
-        <button @click="toggleTheme" class="theme-toggle" title="Toggle Theme">
-          <WeatherNight v-if="theme === 'light'" :size="24" />
-          <WhiteBalanceSunny v-else :size="24" />
-        </button>
-      </div>
-    </header>
+              <div class="header-controls">
+                <button @click="showSettings = !showSettings" class="control-button settings-button" title="Settings">
+                  <CogOutline :size="24" />
+                </button>
+                <button @click="showProfileActions = !showProfileActions" class="control-button profile-button" title="Profile">
+                  <AccountOutline :size="24" />
+                </button>
+              </div>    </header>
 
     <main class="translation-window">
-      <div class="translation-card">
-        <div class="panel transcription-panel">
-          <div class="panel-header">From: {{ fromLanguage.toUpperCase() }}</div>
-          <div class="panel-content">{{ currentTranscription || 'Waiting for you to speak...' }}</div>
+      <div class="conversation-history">
+        <div v-for="(turn, index) in conversationHistory" :key="index" class="conversation-turn">
+          <div class="speaker-icon">
+            <AccountCircleOutline :size="24" v-if="turn.transcription" />
+          </div>
+          <div class="bubble">
+            <p class="transcription-text">From ({{ turn.fromLanguage.toUpperCase() }}): {{ turn.transcription }}</p>
+            <p class="translation-text" v-if="appMode === 'translation'">To ({{ turn.toLanguage.toUpperCase() }}): {{ turn.translation }}</p>
+          </div>
         </div>
-        <div class="panel translation-panel">
-          <div class="panel-header">To: {{ toLanguage.toUpperCase() }}</div>
-          <div class="panel-content">
-            <span v-if="isTranslating" class="spinner"></span>
-            <span v-else>{{ currentTranslation || 'Translation will appear here.' }}</span>
+        <!-- Current active turn -->
+        <div v-if="currentTurn.transcription || isListening" class="conversation-turn current-active-turn">
+          <div class="speaker-icon">
+            <AccountCircleOutline :size="24" v-if="currentTurn.transcription || isListening" />
+          </div>
+          <div class="bubble">
+            <p class="transcription-text">From ({{ fromLanguage.toUpperCase() }}): {{ currentTurn.transcription || 'Waiting for you to speak...' }}</p>
+            <p class="translation-text" v-if="appMode === 'translation'">
+              <span v-if="isTranslating" class="spinner"></span>
+              <span v-else>To ({{ toLanguage.toUpperCase() }}): {{ currentTurn.translation || 'Translation will appear here.' }}</span>
+            </p>
           </div>
         </div>
       </div>
@@ -200,6 +242,15 @@ const toggleTheme = () => {
         <button @click="speak()" class="control-button" title="Speak Translation">
           <Play />
         </button>
+        <div class="setting-item auto-speak-control">
+          <label>
+            <span>Auto Speak</span>
+            <label class="switch">
+              <input type="checkbox" v-model="autoSpeak">
+              <span class="slider round"></span>
+            </label>
+          </label>
+        </div>
         <button @click="toggleListening" class="mic-button" :class="{ 'recording': isListening }" title="Start/Stop Listening">
           <Microphone :size="36" />
         </button>
@@ -211,6 +262,16 @@ const toggleTheme = () => {
         Copyright &copy; Nansuri 2025
       </div>
     </footer>
+    <SettingsModal
+      v-model="showSettings"
+      :theme="theme"
+      :app-mode="appMode"
+      @update:theme="theme = $event"
+      @update:app-mode="appMode = $event"
+    />
+    <UserModal
+      v-model="showProfileActions"
+    />
   </div>
 </template>
 
@@ -258,14 +319,7 @@ const toggleTheme = () => {
 .header-controls {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-}
-
-.control-switch {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
+  gap: 0.75rem; /* Adjusted gap for the two new buttons */
 }
 
 .control-switch input {
@@ -291,18 +345,62 @@ const toggleTheme = () => {
   flex-grow: 1;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* Align items to the start to push bubbles up */
   padding: 1.5rem;
   overflow-y: auto;
 }
 
-.translation-card {
+.conversation-history {
   width: 100%;
   max-width: 900px;
-  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
+  padding-bottom: 1rem; /* Add some padding at the bottom */
+}
+
+.conversation-turn {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.speaker-icon {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  margin-top: 0.25rem; /* Align icon with the top of the bubble */
+}
+
+.bubble {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 0.75rem 1rem;
+  max-width: 80%;
+  word-wrap: break-word;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  flex-grow: 1;
+}
+
+.bubble p {
+  margin: 0;
+}
+
+.transcription-text {
+  font-weight: 500;
+  color: var(--accent-primary);
+  margin-bottom: 0.5rem;
+}
+
+.translation-text {
+  color: var(--text-primary);
+  font-style: italic;
+}
+
+.current-active-turn {
+  margin-top: 1.5rem; /* Space between history and current input */
 }
 
 .panel {
@@ -392,6 +490,20 @@ const toggleTheme = () => {
   gap: 1rem;
 }
 
+.setting-item.auto-speak-control {
+  width: 120px; /* Give it a defined width to control spacing */
+}
+
+.setting-item.auto-speak-control > label { /* Target the new outer label */
+  display: flex;
+  justify-content: space-between; /* Ensure space between label and switch */
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  width: 100%; /* Make the label take full width of its parent div */
+}
+
 .control-button {
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color);
@@ -433,6 +545,7 @@ const toggleTheme = () => {
   box-shadow: 0 6px 20px -5px var(--accent-primary);
 }
 .mic-button.recording {
+  background-color: var(--accent-dark); /* A more vibrant color when recording */
   animation: pulse 1.5s infinite;
 }
 
@@ -446,6 +559,7 @@ const toggleTheme = () => {
 .spinner {
   width: 24px;
   height: 24px;
+  margin: 0 0.5rem;
   border: 3px solid var(--border-color);
   border-bottom-color: var(--accent-primary);
   border-radius: 50%;
