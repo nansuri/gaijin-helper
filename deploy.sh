@@ -12,18 +12,12 @@
 
 echo "--- Starting Clean Deployment ---"
 
-echo "1. Checking if libretranslate container needs to be restarted..."
-if docker ps -a --format '{{.Names}}' | grep -q '^gaijin-helper_libretranslate$'; then
-    echo "   Found gaijin-helper_libretranslate container. Stopping and removing it..."
-    docker stop gaijin-helper_libretranslate 2>/dev/null
-    docker rm gaijin-helper_libretranslate 2>/dev/null
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to remove gaijin-helper_libretranslate container. Aborting deployment."
-        exit 1
-    fi
-    echo "   Successfully removed gaijin-helper_libretranslate container."
-else
-    echo "   gaijin-helper_libretranslate container not found. Skipping removal."
+echo "1. Stopping and removing existing Docker containers and associated resources..."
+DOCKER_BUILDKIT=1 docker-compose down --volumes --remove-orphans
+
+if [ $? -ne 0 ]; then
+    echo "Error: docker-compose down failed. Aborting deployment."
+    exit 1
 fi
 
 echo "2. Building and starting new Docker containers in detached mode..."
