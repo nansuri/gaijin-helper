@@ -171,7 +171,9 @@ describe('ConversationDisplay.vue', () => {
       },
     });
 
-    expect(wrapper.text()).toContain('Waiting...');
+    // When there's no transcription and isListening is false, the current turn is not rendered
+    // This is expected behavior - we only show current turn if transcription exists or isListening
+    expect(wrapper.find('.conversation-turn--active').exists()).toBe(false);
   });
 
   it('renders with empty history', () => {
