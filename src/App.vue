@@ -308,7 +308,7 @@ const clearText = () => {
 #app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100dvh;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   transition: background-color 0.3s, color 0.3s;
@@ -620,11 +620,11 @@ const clearText = () => {
 
 @media (max-width: 600px) {
   .translation-window {
-    padding: 0.75rem; /* Reduced padding for smaller screens */
+    padding: 0.5rem; /* Reduced padding for smaller screens */
   }
 
   .app-header {
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0.75rem;
   }
 
   .app-title {
@@ -640,12 +640,40 @@ const clearText = () => {
   }
 
   .conversation-history {
-    gap: 0.75rem;
+    gap: 0.5rem;
   }
 
   .bubble {
-    padding: 0.6rem 0.8rem;
+    padding: 0.5rem 0.75rem;
     font-size: 0.9rem;
+  }
+
+  .app-footer {
+    padding: 0.75rem 1rem;
+    gap: 0.75rem;
+  }
+
+  .language-controls {
+    gap: 0.75rem;
+  }
+
+  .main-controls {
+    gap: 0.75rem;
+  }
+
+  .control-button {
+    width: 50px;
+    height: 50px;
+  }
+
+  .mic-button {
+    width: 60px;
+    height: 60px;
+  }
+
+  .copyright {
+    font-size: 0.7rem;
+    margin-top: 0.25rem;
   }
 }
 </style>
