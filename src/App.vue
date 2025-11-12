@@ -154,11 +154,23 @@ const LIBRETRANSLATE_API_URL = 'https://translate-api.justnansuri.com';
     currentTurn.value.translation = translatedText;
     conversationHistory.value.push({ ...currentTurn.value }); // Add current turn to history
     currentTurn.value = { transcription: '', translation: '', fromLanguage: fromLanguage.value, toLanguage: toLanguage.value }; // Reset current turn
-    if (autoSpeak.value) speak(translatedText);
+    
+    if (autoSpeak.value) {
+      speak(translatedText);
+    } else {
+      // Auto-restart the microphone if it was listening
+      if (isSupported && !isListening.value) {
+        startRecognition();
+      }
+    }
 
   } catch (error) {
     console.error('Translation error:', error);
     currentTurn.value.translation = 'Error: Could not translate.';
+    // Auto-restart the microphone if it was listening
+    if (isSupported && !isListening.value) {
+      startRecognition();
+    }
   } finally {
     isTranslating.value = false;
   }
@@ -186,7 +198,7 @@ const speak = (textToSpeak?: string) => {
     utterance.lang = toLanguage.value;
 
     utterance.onend = () => {
-      if (wasListeningBeforeSpeak.value) {
+      if (wasListeningBeforeSpeak.value && isSupported) {
         startRecognition();
         wasListeningBeforeSpeak.value = false;
       }
