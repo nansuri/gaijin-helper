@@ -60,7 +60,18 @@ export function useSpeechRecognition(language: Ref<string>) {
   };
 
   watch(language, (newLang) => {
-    if (recognition) {
+    if (recognition && isListening.value) {
+      // If recognition is running and language changes, restart it with the new language
+      recognition.stop();
+      // Wait for stop to complete before restarting
+      setTimeout(() => {
+        if (recognition) {
+          recognition.lang = newLang;
+          recognition.start();
+        }
+      }, 100);
+    } else if (recognition) {
+      // If not running, just update the language for the next start
       recognition.lang = newLang;
     }
   });

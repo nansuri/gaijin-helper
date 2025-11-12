@@ -86,9 +86,10 @@ watch(fromLanguage, (newLang, oldLang) => {
   if (newLang !== oldLang) {
     if (isListening.value) {
       stopRecognition();
-      // A small delay might be needed before restarting, but often not.
-      // The useSpeechRecognition composable should handle re-initializing with the new language.
-      startRecognition();
+      // Add a small delay to ensure recognition is fully stopped before restarting
+      setTimeout(() => {
+        startRecognition();
+      }, 100);
     }
     // Clear current turn and history to avoid displaying old language data
     clearText();
