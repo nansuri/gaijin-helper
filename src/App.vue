@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue';
-import { useSpeechRecognition } from './composables/useSpeechRecognition';
+import { useConversation } from './composables/useConversation';
+import { useLanguages } from './composables/useLanguages';
+import { useTheme } from './composables/useTheme';
+import { useTranslationFlow } from './composables/useTranslationFlow';
+import { useModals } from './composables/useModals'; // Import the new composable
 
 // Import SVG Icons
 import Translate from 'vue-material-design-icons/Translate.vue';
@@ -17,69 +21,41 @@ import CogOutline from 'vue-material-design-icons/CogOutline.vue'; // New icon f
 import SettingsModal from './components/SettingsModal.vue'; // Import the new SettingsModal component
 
 // --- State ---
-const fromLanguage = ref('en');
-const toLanguage = ref('ja');
-const currentTranscription = ref('');
-const currentTranslation = ref('');
-const isTranslating = ref(false);
-const autoSpeak = ref(false);
-const theme = ref<'light' | 'dark'>('dark');
-const wasListeningBeforeSpeak = ref(false);
-let translationTimeout: number | undefined;
 const appMode = ref<'translation' | 'transcribeOnly'>('translation'); // New state for app mode
-const showSettings = ref(false); // New state for settings menu visibility
-const showProfileActions = ref(false); // New state for profile actions visibility
-const conversationHistory = ref<{
-  transcription: string;
-  translation: string;
-  fromLanguage: string;
-  toLanguage: string;
-}[]>([]); // New state for conversation history
-const currentTurn = ref<{
-  transcription: string;
-  translation: string;
-  fromLanguage: string;
-  toLanguage: string;
-}>({ transcription: '', translation: '', fromLanguage: fromLanguage.value, toLanguage: toLanguage.value }); // New state for the current turn
 
 // --- Composables ---
+const { fromLanguage, toLanguage, swapLanguages } = useLanguages();
+
 const {
+  conversationHistory,
+  currentTurn,
+  saveConversation,
+  loadConversation,
+  clearSavedConversation,
+  clearText,
+} = useConversation(fromLanguage, toLanguage);
+
+const { theme } = useTheme();
+
+const {
+  currentTranscription,
+  currentTranslation,
+  isTranslating,
+  autoSpeak,
   isSupported,
   isListening,
-  transcription,
-  isFinal,
-  start: startRecognition,
-  stop: stopRecognition,
-} = useSpeechRecognition(fromLanguage);
+  startRecognition,
+  stopRecognition,
+  translate,
+  speak,
+  appMode: translationFlowAppMode, // Rename to avoid conflict
+} = useTranslationFlow(fromLanguage, toLanguage, conversationHistory, currentTurn, clearText);
+
+const { showSettings, showProfileActions } = useModals(); // Use the new composable
 
 // --- Lifecycle & Watchers ---
 onMounted(() => {
-  const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
-  if (savedTheme) {
-    theme.value = savedTheme;
-  } else {
-    document.documentElement.className = 'dark';
-  }
   loadConversation(); // Load conversation history on mount
-});
-
-watch(transcription, (newTranscription) => {
-  currentTurn.value.transcription = newTranscription;
-  currentTurn.value.fromLanguage = fromLanguage.value; // Update language
-});
-
-watch(isFinal, (newIsFinal) => {
-  if (newIsFinal) {
-    clearTimeout(translationTimeout);
-    translationTimeout = setTimeout(() => {
-      translate(currentTurn.value.transcription.trim());
-    }, 400);
-  }
-});
-
-watch(theme, (newTheme) => {
-  document.documentElement.className = newTheme;
-  localStorage.setItem('theme', newTheme);
 });
 
 watch(fromLanguage, (newLang, oldLang) => {
@@ -96,25 +72,6 @@ watch(fromLanguage, (newLang, oldLang) => {
 });
 
 // --- Functions ---
-const saveConversation = () => {
-  localStorage.setItem('gaijin-helper-conversation-history', JSON.stringify(conversationHistory.value));
-  alert('Conversation saved!');
-};
-
-const loadConversation = () => {
-  const savedHistory = localStorage.getItem('gaijin-helper-conversation-history');
-  if (savedHistory) {
-    conversationHistory.value = JSON.parse(savedHistory);
-    alert('Conversation loaded!');
-  }
-};
-
-const clearSavedConversation = () => {
-  localStorage.removeItem('gaijin-helper-conversation-history');
-  conversationHistory.value = []; // Also clear current history in app
-  alert('Saved conversation cleared!');
-};
-
 const toggleListening = () => {
   if (!isSupported) {
     alert('Your browser does not support the Web Speech API.');
@@ -126,81 +83,6 @@ const toggleListening = () => {
     clearText();
     startRecognition();
   }
-};
-
-const swapLanguages = () => {
-  [fromLanguage.value, toLanguage.value] = [toLanguage.value, fromLanguage.value];
-  currentTurn.value.fromLanguage = fromLanguage.value;
-  currentTurn.value.toLanguage = toLanguage.value;
-};
-
-const translate = async (text: string) => {
-  if (!text || appMode.value === 'transcribeOnly') return;
-  isTranslating.value = true;
-  currentTurn.value.translation = ''; // Clear current translation while translating
-
-  try {
-const LIBRETRANSLATE_API_URL = 'https://translate-api.justnansuri.com';
-// ...
-    const res = await fetch(`${LIBRETRANSLATE_API_URL}/translate`, {
-      method: 'POST',
-      body: JSON.stringify({ q: text, source: fromLanguage.value, target: toLanguage.value, format: 'text' }),
-      headers: { 'Content-Type': 'application/json' }
-    });
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-    const data = await res.json();
-    const translatedText = data.translatedText;
-    
-    currentTurn.value.translation = translatedText;
-    conversationHistory.value.push({ ...currentTurn.value }); // Add current turn to history
-    currentTurn.value = { transcription: '', translation: '', fromLanguage: fromLanguage.value, toLanguage: toLanguage.value }; // Reset current turn
-    if (autoSpeak.value) speak(translatedText);
-
-  } catch (error) {
-    console.error('Translation error:', error);
-    currentTurn.value.translation = 'Error: Could not translate.';
-  } finally {
-    isTranslating.value = false;
-  }
-};
-
-const speak = (textToSpeak?: string) => {
-  let text = textToSpeak; // Use provided text first
-
-  if (!text) { // If no text was provided to the function
-    if (currentTurn.value.translation) {
-      text = currentTurn.value.translation;
-    } else if (conversationHistory.value.length > 0) {
-      // If current translation is empty, try to speak the last translation from history
-      text = conversationHistory.value[conversationHistory.value.length - 1].translation;
-    }
-  }
-
-  if (text) {
-    wasListeningBeforeSpeak.value = isListening.value;
-    if (isListening.value) {
-      stopRecognition();
-    }
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = toLanguage.value;
-
-    utterance.onend = () => {
-      if (wasListeningBeforeSpeak.value) {
-        startRecognition();
-        wasListeningBeforeSpeak.value = false;
-      }
-    };
-
-    speechSynthesis.speak(utterance);
-  } else {
-    console.warn("No text available to speak.");
-  }
-};
-
-const clearText = () => {
-  currentTurn.value = { transcription: '', translation: '', fromLanguage: fromLanguage.value, toLanguage: toLanguage.value };
-  conversationHistory.value = []; // Clear history
 };
 </script>
 
@@ -231,7 +113,7 @@ const clearText = () => {
           </div>
           <div class="bubble">
             <p class="transcription-text">From ({{ turn.fromLanguage.toUpperCase() }}): {{ turn.transcription }}</p>
-            <p class="translation-text" v-if="appMode === 'translation'">To ({{ turn.toLanguage.toUpperCase() }}): {{ turn.translation }}</p>
+            <p class="translation-text" v-if="translationFlowAppMode === 'translation'">To ({{ turn.toLanguage.toUpperCase() }}): {{ turn.translation }}</p>
           </div>
         </div>
         <!-- Current active turn -->
@@ -241,7 +123,7 @@ const clearText = () => {
           </div>
           <div class="bubble">
             <p class="transcription-text">From ({{ fromLanguage.toUpperCase() }}): {{ currentTurn.transcription || 'Waiting for you to speak...' }}</p>
-            <p class="translation-text" v-if="appMode === 'translation'">
+            <p class="translation-text" v-if="translationFlowAppMode === 'translation'">
               <span v-if="isTranslating" class="spinner"></span>
               <span v-else>To ({{ toLanguage.toUpperCase() }}): {{ currentTurn.translation || 'Translation will appear here.' }}</span>
             </p>
@@ -289,17 +171,17 @@ const clearText = () => {
     <SettingsModal
       v-model="showSettings"
       :theme="theme"
-      :app-mode="appMode"
+      :app-mode="translationFlowAppMode"
       :auto-speak="autoSpeak"
       @update:theme="theme = $event"
-      @update:app-mode="appMode = $event"
+      @update:app-mode="translationFlowAppMode = $event"
       @update:auto-speak="autoSpeak = $event"
     />
     <UserModal
       v-model="showProfileActions"
-      @save-conversation="saveConversation"
-      @load-conversation="loadConversation"
-      @clear-saved-conversation="clearSavedConversation"
+      :save-conversation="saveConversation"
+      :load-conversation="loadConversation"
+      :clear-saved-conversation="clearSavedConversation"
     />
   </div>
 </template>
@@ -377,212 +259,73 @@ const clearText = () => {
   align-items: flex-start; /* Align items to the start to push bubbles up */
   padding: 1.5rem;
   overflow-y: auto;
+  min-height: 0; /* Add this to prevent overflow on mobile */
 }
 
-.conversation-history {
-  width: 100%;
-  max-width: 900px;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding-bottom: 1rem; /* Add some padding at the bottom */
-}
+/* ... existing styles ... */
 
-.conversation-turn {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-}
+@media (max-width: 768px) {
+  .app-header {
+    padding: 0.75rem 1rem;
+  }
 
-.speaker-icon {
-  flex-shrink: 0;
-  color: var(--text-secondary);
-  margin-top: 0.25rem; /* Align icon with the top of the bubble */
-}
+  .app-title {
+    font-size: 1.1rem;
+  }
 
-.bubble {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 0.75rem 1rem;
-  max-width: 80%;
-  word-wrap: break-word;
-  font-size: 1rem;
-  line-height: 1.5;
-  color: var(--text-primary);
-  flex-grow: 1;
-}
+  .app-description {
+    font-size: 0.75rem;
+  }
 
-.bubble p {
-  margin: 0;
-}
+  .header-controls {
+    gap: 0.5rem;
+  }
 
-.transcription-text {
-  font-weight: 500;
-  color: var(--accent-primary);
-  margin-bottom: 0.5rem;
-}
+  .translation-window {
+    padding: 1rem;
+  }
 
-.translation-text {
-  color: var(--text-primary);
-  font-style: italic;
-}
+  .conversation-history {
+    gap: 0.75rem;
+  }
 
-.current-active-turn {
-  margin-top: 1.5rem; /* Space between history and current input */
-}
+  .bubble {
+    max-width: 90%;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.9rem;
+  }
 
-.panel {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 1.5rem;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 4px 12px var(--shadow-color);
-}
+  .app-footer {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
 
-.panel-header {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border-color);
-}
+  .language-controls {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
 
-.panel-content {
-  flex-grow: 1;
-  font-size: 1.5rem;
-  line-height: 1.6;
-  color: var(--text-primary);
-}
+  .select-wrapper {
+    max-width: none; /* Allow full width on small screens */
+    flex-grow: 1;
+  }
 
-.transcription-panel .panel-content {
-  color: var(--accent-primary);
-  font-weight: 500;
-}
+  .main-controls {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
 
-.app-footer {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  border-top: 1px solid var(--border-color);
-  background-color: var(--bg-secondary);
-  box-shadow: 0 -2px 10px var(--shadow-color);
-  flex-shrink: 0;
-}
+  .control-button {
+    width: 50px;
+    height: 50px;
+    font-size: 1rem;
+  }
 
-.language-controls {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-}
-
-.select-wrapper {
-  position: relative;
-  flex-grow: 1;
-  max-width: 300px;
-}
-
-.language-select {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 0.5rem 2.5rem 0.5rem 0.75rem;
-  font-family: var(--font-sans);
-  width: 100%;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-}
-
-.select-wrapper::after {
-  content: '▼';
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-.main-controls {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-}
-
-.setting-item.auto-speak-control {
-  width: 120px; /* Give it a defined width to control spacing */
-}
-
-.setting-item.auto-speak-control > label { /* Target the new outer label */
-  display: flex;
-  justify-content: space-between; /* Ensure space between label and switch */
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  color: var(--text-primary);
-  width: 100%; /* Make the label take full width of its parent div */
-}
-
-.control-button {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-  width: 55px;
-  height: 55px;
-  border-radius: 50%;
-  font-size: 1.2rem;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: all 0.2s ease-in-out;
-  box-shadow: 0 2px 5px var(--shadow-color);
-}
-.control-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px var(--shadow-color);
-  color: var(--accent-primary);
-  border-color: var(--accent-primary);
-}
-
-.mic-button {
-  background-color: var(--accent-primary);
-  color: white;
-  border: none;
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px -5px var(--accent-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.mic-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px -5px var(--accent-primary);
-}
-.mic-button.recording {
-  background-color: var(--accent-dark); /* A more vibrant color when recording */
-  animation: pulse 1.5s infinite;
-}
-
-.copyright {
-  text-align: center;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin-top: 0.5rem;
+  .mic-button {
+    width: 60px;
+    height: 60px;
+  }
 }
 
 .spinner {
