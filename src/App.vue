@@ -19,6 +19,7 @@ const fromLanguage = ref('en');
 const toLanguage = ref('ja');
 const isTranslating = ref(false);
 const autoSpeak = ref(false);
+const isSpeaking = ref(false);
 const theme = ref<'light' | 'dark'>('dark');
 const wasListeningBeforeSpeak = ref(false);
 let translationTimeout: number | undefined;
@@ -74,9 +75,11 @@ watch(transcription, (newTranscription) => {
 watch(isFinal, (newIsFinal) => {
   if (newIsFinal) {
     clearTimeout(translationTimeout);
+    // Increased timeout to 2 seconds to allow user to continue speaking after a pause
+    // This prevents premature translation when user pauses mid-sentence
     translationTimeout = setTimeout(() => {
       translate(currentTurn.value.transcription.trim());
-    }, 400);
+    }, 2000);
   }
 });
 
@@ -184,6 +187,13 @@ const translate = async (text: string) => {
 };
 
 const speak = (textToSpeak?: string) => {
+  // If currently speaking, stop the speech
+  if (isSpeaking.value) {
+    speechSynthesis.cancel();
+    isSpeaking.value = false;
+    return;
+  }
+
   let text = textToSpeak; // Use provided text first
 
   if (!text) { // If no text was provided to the function
@@ -204,11 +214,20 @@ const speak = (textToSpeak?: string) => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = toLanguage.value;
 
+    utterance.onstart = () => {
+      isSpeaking.value = true;
+    };
+
     utterance.onend = () => {
+      isSpeaking.value = false;
       if (wasListeningBeforeSpeak.value && isSupported) {
         startRecognition();
         wasListeningBeforeSpeak.value = false;
       }
+    };
+
+    utterance.onerror = () => {
+      isSpeaking.value = false;
     };
 
     speechSynthesis.speak(utterance);
@@ -290,7 +309,7 @@ const clearText = () => {
         </div>
       </div>
       <div class="main-controls">
-        <button @click="speak()" class="control-button" title="Speak Translation" aria-label="Speak Translation">
+        <button @click="speak()" class="control-button" :class="{ 'speaking': isSpeaking }" title="Speak Translation / Stop" aria-label="Speak Translation or Stop">
           <Play />
         </button>
 
@@ -573,6 +592,13 @@ const clearText = () => {
   color: var(--accent-primary);
   border-color: var(--accent-primary);
 }
+.control-button.speaking {
+  background-color: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 0 var(--accent-primary);
+  animation: pulse-speak 1.5s infinite;
+}
 
 .mic-button {
   background-color: var(--accent-primary);
@@ -634,6 +660,18 @@ const clearText = () => {
   }
   100% {
     box-shadow: 0 0 0 0 rgba(255, 82, 82, 0);
+  }
+}
+
+@keyframes pulse-speak {
+  0% {
+    box-shadow: 0 0 0 0 var(--accent-primary);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(77, 171, 247, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(77, 171, 247, 0);
   }
 }
 

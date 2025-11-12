@@ -6,6 +6,7 @@ export function useSpeechRecognition(language: Ref<string>) {
   const transcription = ref('');
   const isFinal = ref(false);
   const error = ref<string | null>(null);
+  let lastFinalTime = 0;
 
   let recognition: SpeechRecognition | null = null;
 
@@ -19,10 +20,12 @@ export function useSpeechRecognition(language: Ref<string>) {
       isFinal.value = false;
       transcription.value = '';
       error.value = null;
+      lastFinalTime = 0;
     };
 
     recognition.onend = () => {
       isListening.value = false;
+      isFinal.value = false;
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
@@ -41,7 +44,10 @@ export function useSpeechRecognition(language: Ref<string>) {
         }
       }
       transcription.value = final + interim;
-      isFinal.value = final !== '';
+      if (final !== '') {
+        isFinal.value = true;
+        lastFinalTime = Date.now();
+      }
     };
 
   }
