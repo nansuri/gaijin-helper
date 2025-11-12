@@ -3,6 +3,9 @@ import { ref } from 'vue';
 
 const props = defineProps<{
   modelValue: boolean; // Controls visibility of the modal
+  saveConversation: () => void;
+  loadConversation: () => void;
+  clearSavedConversation: () => void;
 }>();
 
 const emit = defineEmits<{
@@ -26,10 +29,10 @@ const registerUser = () => {
       <h2 class="user-modal-title">User Actions</h2>
 
       <div class="user-actions-section">
-        <button @click="registerUser" class="register-button">Register</button>
-        <!-- Future user management actions can go here -->
-        <!-- <button class="login-button">Login</button> -->
-        <!-- <button class="profile-button">View Profile</button> -->
+        <button @click="registerUser" class="action-button">Register</button>
+        <button @click="props.saveConversation" class="action-button">Save Current Conversation</button>
+        <button @click="props.loadConversation" class="action-button">Load Last Conversation</button>
+        <button @click="props.clearSavedConversation" class="action-button danger-button">Clear Saved Conversation</button>
       </div>
     </div>
   </div>
@@ -78,7 +81,7 @@ const registerUser = () => {
   gap: 1rem;
 }
 
-.register-button {
+.action-button { /* Renamed from register-button to be more generic */
   width: 100%;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
@@ -92,9 +95,17 @@ const registerUser = () => {
   text-align: center;
 }
 
-.register-button:hover {
+.action-button:hover {
   background-color: var(--accent-dark);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+.danger-button {
+  background-color: #dc3545; /* Red color for danger action */
+}
+
+.danger-button:hover {
+  background-color: #c82333;
 }
 </style>

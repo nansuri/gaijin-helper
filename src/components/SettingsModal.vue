@@ -9,12 +9,14 @@ const props = defineProps<{
   modelValue: boolean; // Controls visibility of the modal
   theme: 'light' | 'dark';
   appMode: 'translation' | 'transcribeOnly';
+  autoSpeak: boolean; // New prop for auto-speak setting
 }>();
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void;
   (e: 'update:theme', value: 'light' | 'dark'): void;
   (e: 'update:appMode', value: 'translation' | 'transcribeOnly'): void;
+  (e: 'update:autoSpeak', value: boolean): void; // New emit for auto-speak setting
 }>();
 
 const localTheme = computed({
@@ -25,6 +27,11 @@ const localTheme = computed({
 const isTranslationMode = computed({
   get: () => props.appMode === 'translation',
   set: (value: boolean) => emit('update:appMode', value ? 'translation' : 'transcribeOnly'),
+});
+
+const localAutoSpeak = computed({
+  get: () => props.autoSpeak,
+  set: (value: boolean) => emit('update:autoSpeak', value),
 });
 
 const toggleTheme = () => {
@@ -62,6 +69,14 @@ const closeSettings = () => {
             </label>
             <span>Translation</span>
           </div>
+        </div>
+
+        <div class="setting-item">
+          <span>Auto Speak</span>
+          <label class="switch">
+            <input type="checkbox" v-model="localAutoSpeak">
+            <span class="slider round"></span>
+          </label>
         </div>
       </div>
     </div>

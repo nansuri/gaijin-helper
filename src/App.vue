@@ -60,6 +60,7 @@ onMounted(() => {
   } else {
     document.documentElement.className = 'dark';
   }
+  loadConversation(); // Load conversation history on mount
 });
 
 watch(transcription, (newTranscription) => {
@@ -95,6 +96,25 @@ watch(fromLanguage, (newLang, oldLang) => {
 });
 
 // --- Functions ---
+const saveConversation = () => {
+  localStorage.setItem('gaijin-helper-conversation-history', JSON.stringify(conversationHistory.value));
+  alert('Conversation saved!');
+};
+
+const loadConversation = () => {
+  const savedHistory = localStorage.getItem('gaijin-helper-conversation-history');
+  if (savedHistory) {
+    conversationHistory.value = JSON.parse(savedHistory);
+    alert('Conversation loaded!');
+  }
+};
+
+const clearSavedConversation = () => {
+  localStorage.removeItem('gaijin-helper-conversation-history');
+  conversationHistory.value = []; // Also clear current history in app
+  alert('Saved conversation cleared!');
+};
+
 const toggleListening = () => {
   if (!isSupported) {
     alert('Your browser does not support the Web Speech API.');
@@ -145,7 +165,17 @@ const LIBRETRANSLATE_API_URL = 'https://translate-api.justnansuri.com';
 };
 
 const speak = (textToSpeak?: string) => {
-  let text = textToSpeak || currentTurn.value.translation;
+  let text = textToSpeak; // Use provided text first
+
+  if (!text) { // If no text was provided to the function
+    if (currentTurn.value.translation) {
+      text = currentTurn.value.translation;
+    } else if (conversationHistory.value.length > 0) {
+      // If current translation is empty, try to speak the last translation from history
+      text = conversationHistory.value[conversationHistory.value.length - 1].translation;
+    }
+  }
+
   if (text) {
     wasListeningBeforeSpeak.value = isListening.value;
     if (isListening.value) {
@@ -163,6 +193,8 @@ const speak = (textToSpeak?: string) => {
     };
 
     speechSynthesis.speak(utterance);
+  } else {
+    console.warn("No text available to speak.");
   }
 };
 
@@ -242,15 +274,7 @@ const clearText = () => {
         <button @click="speak()" class="control-button" title="Speak Translation">
           <Play />
         </button>
-        <div class="setting-item auto-speak-control">
-          <label>
-            <span>Auto Speak</span>
-            <label class="switch">
-              <input type="checkbox" v-model="autoSpeak">
-              <span class="slider round"></span>
-            </label>
-          </label>
-        </div>
+
         <button @click="toggleListening" class="mic-button" :class="{ 'recording': isListening }" title="Start/Stop Listening">
           <Microphone :size="36" />
         </button>
@@ -266,11 +290,16 @@ const clearText = () => {
       v-model="showSettings"
       :theme="theme"
       :app-mode="appMode"
+      :auto-speak="autoSpeak"
       @update:theme="theme = $event"
       @update:app-mode="appMode = $event"
+      @update:auto-speak="autoSpeak = $event"
     />
     <UserModal
       v-model="showProfileActions"
+      @save-conversation="saveConversation"
+      @load-conversation="loadConversation"
+      @clear-saved-conversation="clearSavedConversation"
     />
   </div>
 </template>
